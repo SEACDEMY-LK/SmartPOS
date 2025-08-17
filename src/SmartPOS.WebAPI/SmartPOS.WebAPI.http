@@ -1,0 +1,6 @@
+@SmartPOS.WebAPI_HostAddress = http://localhost:5277
+
+GET {{SmartPOS.WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
