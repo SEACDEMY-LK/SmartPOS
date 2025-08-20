@@ -1,41 +1,89 @@
+using Microsoft.EntityFrameworkCore;
+using Polly;
+using SmartPOS.Application;
+using SmartPOS.Domain.Products;
+using SmartPOS.Infrastructure;
+using SmartPOS.Infrastructure.Persistance;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
+var configuration = builder.Configuration;
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddApplicationServices();
+
+
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddInfrastructure(configuration);
+}
+
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+var retryPolicy = Policy
+    .Handle<Exception>()
+    .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(2));
+
+retryPolicy.Execute(() =>
+{
+
+    // Ensure the database is created
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<SmartPOSDbContext>();
+
+    try
+    {
+        if (!app.Environment.IsEnvironment("Testing"))
+        {
+            dbContext.Database.Migrate();
+        }
+        else
+        {
+            dbContext.Database.EnsureDeleted();
+        }
+
+        if (!dbContext.Products.Any())
+        {
+            // Seed the database with initial data if needed
+            dbContext.Products.AddRange(
+                new Product("Product1", "Pencil", 10.0m),
+                new Product("Product2", "Pen", 5.0m),
+                new Product("Product3", "Eraser", 1.0m)
+            );
+
+            dbContext.SaveChanges();
+
+        }
+
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while ensuring the database is created or migrated.");
+        throw;
+    }
+});    
+
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-var summaries = new[]
+if (!app.Environment.IsProduction())
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    app.UseHttpsRedirection();
+}
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+// For Integration Tests
+public partial class Program {}
+

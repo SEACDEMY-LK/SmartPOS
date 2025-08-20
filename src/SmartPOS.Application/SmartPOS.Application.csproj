@@ -15,4 +15,12 @@
     <ProjectReference Include="..\SmartPOS.Domain\SmartPOS.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Common\Behaviors\" />
+    <Folder Include="Common\Exceptions\" />
+    <Folder Include="Products\Commands\DeleteProduct\" />
+    <Folder Include="Products\Commands\UpdateProduct\" />
+    <Folder Include="Products\Queries\GetProductById\" />
+  </ItemGroup>
+
 </Project>

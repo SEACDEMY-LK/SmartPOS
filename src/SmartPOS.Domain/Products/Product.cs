@@ -1,6 +1,6 @@
-﻿namespace SmartPOS.Domain.Entities;
+﻿namespace SmartPOS.Domain.Products;
 
-public class Product : IAggregateRoot
+public class Product 
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;

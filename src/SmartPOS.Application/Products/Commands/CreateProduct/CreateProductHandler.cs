@@ -1,8 +1,8 @@
 ﻿using MediatR;
 using SmartPOS.Application.Interfaces;
-using SmartPOS.Domain.Entities;
+using SmartPOS.Domain.Products;
 
-namespace SmartPOS.Application.Products.Commands;
+namespace SmartPOS.Application.Products.Commands.CreateProduct;
 
 public class CreateProductHandler : IRequestHandler<CreateProductCommand, int>
 {
@@ -15,7 +15,7 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, int>
     {
         var product = new Product(request.Name, request.Description, request.Price);
         await _productRepository.AddProductAsync(product);
-        await _productRepository.SaveChanges(); ;
+        await _productRepository.SaveChanges(cancellationToken);
 
         return product.Id;
     }

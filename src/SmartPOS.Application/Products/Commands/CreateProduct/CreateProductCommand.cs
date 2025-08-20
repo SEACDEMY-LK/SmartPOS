@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace SmartPOS.Application.Products.Commands;
+namespace SmartPOS.Application.Products.Commands.CreateProduct;
 
 public record CreateProductCommand(
     string Name,
